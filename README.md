@@ -13,7 +13,7 @@ API format inspired by [Sunnah.com API](https://sunnah.stoplight.io/docs/api/).
 ## Quick Start
 
 ```bash
-git clone https://github.com/alann-maulana/hadith-api-go.git
+git clone https://github.com/Yayasan-Digital-Islami-Indonesia/hadith-api-go.git
 cd hadith-api-go
 go mod download
 make migrate && make seed && make run
