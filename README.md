@@ -153,7 +153,7 @@ curl http://localhost:8080/v1/hadiths/random
 ## Tech Stack
 
 ```
-Go 1.22+ • Gin • SQLite • Goose • Zerolog
+Go 1.25+ • Gin • SQLite • Goose • Zerolog
 ```
 
 ---
