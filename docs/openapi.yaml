@@ -1,0 +1,599 @@
+openapi: 3.0.3
+info:
+  title: Hadith API Go
+  description: |
+    REST API for Hadith collections. Provides access to hadith collections, books, and individual hadiths
+    with multilingual support (Arabic, English, Indonesian).
+
+    API format is inspired by [Sunnah.com API](https://sunnah.stoplight.io/docs/api/).
+
+    ## Features
+    - Fast — P95 < 200ms
+    - Lightweight — Single binary, SQLite embedded
+    - Simple — JSON response
+
+    ## Available Collections
+    - `bukhari` — Sahih al-Bukhari
+    - `muslim` — Sahih Muslim
+    - `abudawud` — Sunan Abu Dawud
+    - `tirmidhi` — Jami` at-Tirmidhi
+    - `nasai` — Sunan an-Nasa'i
+    - `ibnmajah` — Sunan Ibn Majah
+    - `malik` — Muwatta Malik
+    - `riyadussalihin` — Riyad as-Salihin
+  version: 1.0.0
+  contact:
+    name: Hadith API Go
+    url: https://github.com/alann-maulana/hadith-api-go
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: health
+    description: Health check endpoints
+  - name: collections
+    description: Hadith collection endpoints
+  - name: books
+    description: Book endpoints within a collection
+  - name: hadiths
+    description: Individual hadith endpoints
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Health check
+      description: Returns the status of the API service
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                data:
+                  status: OK
+                  version: 1.0.0
+                  timestamp: '2024-01-01T00:00:00Z'
+                timestamp: '2024-01-01T00:00:00Z'
+
+  /health/ready:
+    get:
+      tags: [health]
+      summary: Readiness check
+      description: Returns the readiness status including database connectivity
+      operationId: readyCheck
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                data:
+                  db_status: OK
+                  timestamp: '2024-01-01T00:00:00Z'
+                timestamp: '2024-01-01T00:00:00Z'
+        '503':
+          description: Service unavailable
+
+  /v1/collections:
+    get:
+      tags: [collections]
+      summary: List hadith collections
+      description: Returns a paginated list of all available hadith collections
+      operationId: listCollections
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: List of hadith collections
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Collection'
+              example:
+                data:
+                  - name: bukhari
+                    hasBooks: true
+                    hasChapters: true
+                    collection:
+                      - lang: en
+                        title: Sahih al-Bukhari
+                        shortIntro: ''
+                      - lang: ar
+                        title: صحيح البخاري
+                        shortIntro: ''
+                    totalHadith: 7563
+                    totalAvailableHadith: 7563
+                total: 8
+                page: 1
+                limit: 20
+                timestamp: '2024-01-01T00:00:00Z'
+
+  /v1/collections/{name}:
+    get:
+      tags: [collections]
+      summary: Get a hadith collection
+      description: Returns details of a specific hadith collection by name
+      operationId: getCollection
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+            example: bukhari
+          description: Collection name identifier (e.g., bukhari, muslim)
+      responses:
+        '200':
+          description: Collection details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Collection'
+              example:
+                data:
+                  name: bukhari
+                  hasBooks: true
+                  hasChapters: true
+                  collection:
+                    - lang: en
+                      title: Sahih al-Bukhari
+                      shortIntro: ''
+                    - lang: ar
+                      title: صحيح البخاري
+                      shortIntro: ''
+                  totalHadith: 7563
+                  totalAvailableHadith: 7563
+                timestamp: '2024-01-01T00:00:00Z'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/collections/{name}/books:
+    get:
+      tags: [books]
+      summary: List books in a collection
+      description: Returns a paginated list of books within a hadith collection
+      operationId: listBooks
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+            example: bukhari
+          description: Collection name
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: List of books
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Book'
+              example:
+                data:
+                  - bookNumber: '1'
+                    book:
+                      - lang: en
+                        name: Revelation
+                      - lang: ar
+                        name: كتاب بدء الوحي
+                    hadithStartNumber: 1
+                    hadithEndNumber: 7
+                    numberOfHadiths: 7
+                total: 97
+                page: 1
+                limit: 20
+                timestamp: '2024-01-01T00:00:00Z'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/collections/{name}/books/{bookNumber}:
+    get:
+      tags: [books]
+      summary: Get a specific book
+      description: Returns details of a specific book within a hadith collection
+      operationId: getBook
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+            example: bukhari
+          description: Collection name
+        - name: bookNumber
+          in: path
+          required: true
+          schema:
+            type: string
+            example: '1'
+          description: Book number
+      responses:
+        '200':
+          description: Book details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Book'
+              example:
+                data:
+                  bookNumber: '1'
+                  book:
+                    - lang: en
+                      name: Revelation
+                    - lang: ar
+                      name: كتاب بدء الوحي
+                  hadithStartNumber: 1
+                  hadithEndNumber: 7
+                  numberOfHadiths: 7
+                timestamp: '2024-01-01T00:00:00Z'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/collections/{name}/books/{bookNumber}/hadiths:
+    get:
+      tags: [hadiths]
+      summary: List hadiths in a book
+      description: Returns a paginated list of hadiths within a specific book of a collection
+      operationId: listHadithsByBook
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+            example: bukhari
+          description: Collection name
+        - name: bookNumber
+          in: path
+          required: true
+          schema:
+            type: string
+            example: '1'
+          description: Book number
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: List of hadiths
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Hadith'
+              example:
+                data:
+                  - collection: bukhari
+                    bookNumber: '1'
+                    chapterId: '1'
+                    hadithNumber: '1'
+                    body:
+                      - lang: ar
+                        text: حَدَّثَنَا الْحُمَيْدِيُّ عَبْدُ اللَّهِ بْنُ الزُّبَيْرِ...
+                      - lang: en
+                        text: Narrated 'Umar bin Al-Khattab...
+                    grades:
+                      - name: Sahih al-Bukhari
+                        grade: Sahih
+                total: 7
+                page: 1
+                limit: 20
+                timestamp: '2024-01-01T00:00:00Z'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/collections/{name}/hadiths/{hadithNumber}:
+    get:
+      tags: [hadiths]
+      summary: Get a specific hadith by number
+      description: Returns a specific hadith by its number within a collection
+      operationId: getHadith
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+            example: bukhari
+          description: Collection name
+        - name: hadithNumber
+          in: path
+          required: true
+          schema:
+            type: string
+            example: '1'
+          description: Hadith number within the collection
+      responses:
+        '200':
+          description: Hadith details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Hadith'
+              example:
+                data:
+                  collection: bukhari
+                  bookNumber: '1'
+                  chapterId: '1'
+                  hadithNumber: '1'
+                  body:
+                    - lang: ar
+                      text: حَدَّثَنَا الْحُمَيْدِيُّ عَبْدُ اللَّهِ بْنُ الزُّبَيْرِ...
+                    - lang: en
+                      text: Narrated 'Umar bin Al-Khattab...
+                  grades:
+                    - name: Sahih al-Bukhari
+                      grade: Sahih
+                timestamp: '2024-01-01T00:00:00Z'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/hadiths/random:
+    get:
+      tags: [hadiths]
+      summary: Get a random hadith
+      description: Returns a randomly selected hadith from the database
+      operationId: randomHadith
+      responses:
+        '200':
+          description: Random hadith
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Hadith'
+
+components:
+  parameters:
+    page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number (default: 1)
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Items per page (default: 20, max: 100)
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: resource not found
+            code: not found
+            timestamp: '2024-01-01T00:00:00Z'
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        data:
+          description: Response payload
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          description: Response payload
+        total:
+          type: integer
+          description: Total number of items
+        page:
+          type: integer
+          description: Current page number
+        limit:
+          type: integer
+          description: Items per page
+        timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    HealthResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              example: OK
+            db_status:
+              type: string
+              example: OK
+            version:
+              type: string
+              example: 1.0.0
+            timestamp:
+              type: string
+              format: date-time
+        timestamp:
+          type: string
+          format: date-time
+
+    CollectionName:
+      type: object
+      properties:
+        lang:
+          type: string
+          example: en
+        title:
+          type: string
+          example: Sahih al-Bukhari
+        shortIntro:
+          type: string
+          example: ''
+
+    Collection:
+      type: object
+      properties:
+        name:
+          type: string
+          example: bukhari
+        hasBooks:
+          type: boolean
+          example: true
+        hasChapters:
+          type: boolean
+          example: true
+        collection:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionName'
+        totalHadith:
+          type: integer
+          example: 7563
+        totalAvailableHadith:
+          type: integer
+          example: 7563
+
+    BookName:
+      type: object
+      properties:
+        lang:
+          type: string
+          example: en
+        name:
+          type: string
+          example: Revelation
+
+    Book:
+      type: object
+      properties:
+        bookNumber:
+          type: string
+          example: '1'
+        book:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookName'
+        hadithStartNumber:
+          type: integer
+          example: 1
+        hadithEndNumber:
+          type: integer
+          example: 7
+        numberOfHadiths:
+          type: integer
+          example: 7
+
+    HadithText:
+      type: object
+      properties:
+        lang:
+          type: string
+          example: en
+        text:
+          type: string
+          example: Narrated 'Umar bin Al-Khattab...
+
+    Grade:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Sahih al-Bukhari
+        grade:
+          type: string
+          example: Sahih
+
+    Hadith:
+      type: object
+      properties:
+        collection:
+          type: string
+          example: bukhari
+        bookNumber:
+          type: string
+          example: '1'
+        chapterId:
+          type: string
+          example: '1'
+        hadithNumber:
+          type: string
+          example: '1'
+        body:
+          type: array
+          items:
+            $ref: '#/components/schemas/HadithText'
+        grades:
+          type: array
+          items:
+            $ref: '#/components/schemas/Grade'
