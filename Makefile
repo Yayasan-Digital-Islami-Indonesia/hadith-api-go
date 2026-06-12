@@ -1,4 +1,4 @@
-.PHONY: build run test seed clean
+.PHONY: build run test seed clean docs
 
 build:
 	go build -o bin/api ./cmd/api
@@ -12,6 +12,9 @@ test:
 
 seed:
 	go run ./cmd/seeder
+
+docs:
+	swag init -g cmd/api/main.go -o docs/swagger
 
 clean:
 	rm -rf bin/ hadith.db

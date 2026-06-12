@@ -4,12 +4,20 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	swaggerFiles "github.com/swaggo/files"
 	"github.com/ydgi/hadith-api-go/internal/config"
 	"github.com/ydgi/hadith-api-go/internal/handlers"
 	"github.com/ydgi/hadith-api-go/internal/middleware"
 	"github.com/ydgi/hadith-api-go/internal/repository"
 	"github.com/ydgi/hadith-api-go/internal/services"
 )
+
+// @title Hadith API
+// @version 1.0
+// @description REST API for Kutub al-Sittah (6 canonical hadith books)
+// @host localhost:8080
+// @BasePath /api/v1
 
 func main() {
 	cfg := config.Load()
@@ -41,6 +49,7 @@ func main() {
 	router.Use(middleware.RateLimit("100"))
 
 	router.GET("/health", handlers.HealthCheck)
+	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	v1 := router.Group("/api/v1")
 	{

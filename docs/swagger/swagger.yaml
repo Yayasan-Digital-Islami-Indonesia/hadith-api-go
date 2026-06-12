@@ -1,0 +1,9 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API for Kutub al-Sittah (6 canonical hadith books)
+  title: Hadith API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

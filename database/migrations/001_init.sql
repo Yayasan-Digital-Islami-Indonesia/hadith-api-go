@@ -51,3 +51,31 @@ CREATE INDEX IF NOT EXISTS idx_chapters_book ON chapters(book_id);
 CREATE INDEX IF NOT EXISTS idx_hadiths_book ON hadiths(book_id);
 CREATE INDEX IF NOT EXISTS idx_hadiths_chapter ON hadiths(chapter_id);
 CREATE INDEX IF NOT EXISTS idx_hadith_texts_hadith ON hadith_texts(hadith_id);
+
+CREATE TRIGGER IF NOT EXISTS hadith_fts_insert AFTER INSERT ON hadith_texts
+BEGIN
+  INSERT INTO hadith_fts(rowid, hadith_id, text_ar, text_en, text_id, chapter_title, book_slug)
+  SELECT NEW.id, NEW.hadith_id,
+    CASE WHEN NEW.lang = 'ar' THEN NEW.text ELSE NULL END,
+    CASE WHEN NEW.lang = 'en' THEN NEW.text ELSE NULL END,
+    CASE WHEN NEW.lang = 'id' THEN NEW.text ELSE NULL END,
+    c.title_ar, b.slug
+  FROM hadiths h
+  JOIN chapters c ON h.chapter_id = c.id
+  JOIN books b ON h.book_id = b.id
+  WHERE h.id = NEW.hadith_id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS hadith_fts_update AFTER UPDATE ON hadith_texts
+BEGIN
+  UPDATE hadith_fts SET
+    text_ar = CASE WHEN NEW.lang = 'ar' THEN NEW.text ELSE text_ar END,
+    text_en = CASE WHEN NEW.lang = 'en' THEN NEW.text ELSE text_en END,
+    text_id = CASE WHEN NEW.lang = 'id' THEN NEW.text ELSE text_id END
+  WHERE rowid = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS hadith_fts_delete AFTER DELETE ON hadith_texts
+BEGIN
+  DELETE FROM hadith_fts WHERE rowid = OLD.id;
+END;

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"gorm.io/gorm"
 	"github.com/ydgi/hadith-api-go/internal/models"
@@ -109,6 +110,61 @@ func (s *Seeder) FetchAndSeed(bookSlug, editionName, lang string) error {
 
 		if err := s.hadithRepo.CreateText(text); err != nil {
 			fmt.Printf("Warning: failed to create text for %s: %v\n", globalID, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *Seeder) SeedChapters(bookSlug, editionName string) error {
+	url := fmt.Sprintf("https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/%s.min.json", editionName)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to fetch chapters: %w", err)
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	var edition EditionResponse
+	if err := json.Unmarshal(data, &edition); err != nil {
+		return fmt.Errorf("failed to unmarshal: %w", err)
+	}
+
+	book, err := s.bookRepo.GetBySlug(bookSlug)
+	if err != nil || book == nil {
+		return fmt.Errorf("book not found: %s", bookSlug)
+	}
+
+	for chapterNumStr, chapterData := range edition.Metadata.SectionDetail {
+		if chapterMap, ok := chapterData.(map[string]interface{}); ok {
+			title := ""
+			if titleVal, exists := chapterMap["title"]; exists {
+				if titleStr, ok := titleVal.(string); ok {
+					title = titleStr
+				}
+			}
+
+			chapterNum, err := strconv.Atoi(chapterNumStr)
+			if err != nil {
+				fmt.Printf("Warning: invalid chapter number %q: %v\n", chapterNumStr, err)
+				continue
+			}
+
+			chapter := &models.Chapter{
+				BookID:  book.ID,
+				Number:  chapterNum,
+				TitleAr: title,
+				TitleEn: title,
+			}
+
+			if err := s.chapterRepo.Create(chapter); err != nil {
+				fmt.Printf("Warning: failed to create chapter %d: %v\n", chapterNum, err)
+			}
 		}
 	}
 
