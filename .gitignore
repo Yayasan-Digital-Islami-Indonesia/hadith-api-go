@@ -13,7 +13,7 @@ bin/
 *.out
 
 # Database files
-*.db
+#*.db
 *.db-shm
 *.db-wal
 
