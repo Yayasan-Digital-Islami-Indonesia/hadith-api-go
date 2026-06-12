@@ -86,19 +86,26 @@ func (s *Seeder) FetchAndSeed(bookSlug, editionName, lang string) error {
 		globalID := fmt.Sprintf("%s-%d", bookSlug, hadithNum)
 
 		existingHadith, _ := s.hadithRepo.GetByGlobalID(globalID)
-		if existingHadith != nil {
-			continue
+		var hadith *models.Hadith
+		
+		if existingHadith == nil {
+			hadith = &models.Hadith{
+				GlobalID:  globalID,
+				BookID:    book.ID,
+				ChapterID: 1,
+				Number:    hadithNum,
+			}
+
+			if err := s.hadithRepo.Create(hadith); err != nil {
+				fmt.Printf("Warning: failed to create hadith %s: %v\n", globalID, err)
+				continue
+			}
+		} else {
+			hadith = existingHadith
 		}
 
-		hadith := &models.Hadith{
-			GlobalID:  globalID,
-			BookID:    book.ID,
-			ChapterID: 1,
-			Number:    hadithNum,
-		}
-
-		if err := s.hadithRepo.Create(hadith); err != nil {
-			fmt.Printf("Warning: failed to create hadith %s: %v\n", globalID, err)
+		exists, _ := s.hadithRepo.TextExists(hadith.ID, lang)
+		if exists {
 			continue
 		}
 

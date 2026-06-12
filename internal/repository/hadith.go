@@ -84,3 +84,11 @@ func (r *HadithRepository) CreateText(text *models.HadithText) error {
 	}
 	return nil
 }
+
+func (r *HadithRepository) TextExists(hadithID uint, lang string) (bool, error) {
+	var count int64
+	if err := r.db.Model(&models.HadithText{}).Where("hadith_id = ? AND lang = ?", hadithID, lang).Count(&count).Error; err != nil {
+		return false, fmt.Errorf("failed to check hadith text: %w", err)
+	}
+	return count > 0, nil
+}
