@@ -1,19 +1,21 @@
 # Hadith API Go
 
-### REST API Hadith Kutub al-Sittah (6 Kitab Induk)
+### REST API + MCP Server untuk Hadith Kutub al-Sittah (6 Kitab Induk)
 
 [![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![SQLite](https://img.shields.io/badge/SQLite-FTS5-07405E?style=flat&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Gin](https://img.shields.io/badge/Gin-Web_Framework-000000?style=flat&logo=go)](https://gin-gonic.com/)
+[![MCP](https://img.shields.io/badge/MCP-Server-supported?style=flat&logo=anthropic)](https://modelcontextprotocol.io/)
 [![License](https://img.shields.io/github/license/ydgi/hadith-api-go?style=flat&colorA=080f12&colorB=1fa669)](LICENSE)
 
 ---
 
-REST API untuk data hadith dari 6 kitab induk (Kutub al-Sittah): Sahih Bukhari, Sahih Muslim, Sunan Abu Dawud, Jami At-Tirmidhi, Sunan an-Nasai, dan Sunan Ibn Majah. Menyediakan teks Arab, terjemahan Inggris, dan Indonesia.
+REST API + MCP Server untuk data hadith dari 6 kitab induk (Kutub al-Sittah): Sahih Bukhari, Sahih Muslim, Sunan Abu Dawud, Jami At-Tirmidhi, Sunan an-Nasai, dan Sunan Ibn Majah. Menyediakan teks Arab, terjemahan Inggris, dan Indonesia.
 
 - **Cepat** — P95 < 200ms
 - **Ringan** — Single binary, SQLite embedded
 - **Simple** — JSON response
+- **MCP Ready** — Integrasikan langsung dengan Claude/LLM
 
 ---
 
@@ -26,7 +28,7 @@ go mod download
 make migrate && make seed && make run
 ```
 
-Server jalan di `http://localhost:8080`
+Server REST jalan di `http://localhost:8080`
 
 **Docker:**
 
@@ -37,7 +39,7 @@ docker run -p 8080:8080 -e ALLOWED_ORIGINS=https://yourapp.com hadith-api-go
 
 ---
 
-## Endpoint
+## REST API Endpoints
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
@@ -82,6 +84,49 @@ curl http://localhost:8080/api/v1/random
 
 ---
 
+## MCP Server
+
+Server ini juga menyediakan MCP (Model Context Protocol) untuk integrasi langsung dengan Claude/LLM.
+
+### MCP Tools
+
+| Tool | Deskripsi |
+|------|-----------|
+| `get_books` | Daftar 6 kitab |
+| `get_book` | Detail kitab (id atau slug) |
+| `get_chapters` | Daftar bab dalam kitab |
+| `get_chapter_hadiths` | Hadith dalam bab (dengan pagination) |
+| `get_hadith` | Hadith by ID |
+| `get_hadith_by_number` | Hadith by nomor dalam kitab |
+| `search_hadith` | Cari hadith by keyword (dengan pagination) |
+| `get_random_hadith` | Hadith acak |
+
+### MCP Configuration
+
+Tambahkan ke Claude Desktop config (`~/.claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "hadith-api": {
+      "command": "/path/to/hadith-api-go/bin/mcp-server",
+      "env": {
+        "DATABASE_PATH": "/path/to/hadith-api-go/hadith.db"
+      }
+    }
+  }
+}
+```
+
+### Build & Run MCP Server
+
+```bash
+make build-mcp
+./bin/mcp-server
+```
+
+---
+
 ## Query Parameters
 
 | Param | Value |
@@ -114,11 +159,13 @@ Go 1.24+ • Gin • GORM • SQLite FTS5 • Swagger/OpenAPI
 ## Development
 
 ```bash
-make build   # build binaries
-make run     # jalankan server
-make test    # run tests
-make seed    # seed data dari hadith-api
-make clean   # hapus bin/ dan database
+make build      # build REST API & seeder binaries
+make run        # jalankan REST API server
+make build-mcp  # build MCP server
+make run-mcp    # jalankan MCP server
+make test       # run tests
+make seed       # seed data dari hadith-api
+make clean      # hapus bin/ dan database
 ```
 
 ---
