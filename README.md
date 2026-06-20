@@ -10,6 +10,7 @@
 [![MCP](https://img.shields.io/badge/MCP-Server-supported?style=flat&logo=anthropic)](https://modelcontextprotocol.io/)
 [![License](https://img.shields.io/github/license/ydgi/hadith-api-go?style=flat&colorA=080f12&colorB=1fa669)](LICENSE)
 </div>
+
 ---
 
 REST API + MCP Server untuk data hadith dari 6 kitab induk (Kutub al-Sittah): Sahih Bukhari, Sahih Muslim, Sunan Abu Dawud, Jami At-Tirmidhi, Sunan an-Nasai, dan Sunan Ibn Majah. Menyediakan teks Arab, terjemahan Inggris, dan Indonesia.
