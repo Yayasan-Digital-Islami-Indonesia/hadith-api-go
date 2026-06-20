@@ -1,4 +1,5 @@
 <div align="center">
+
 # Hadith API Go
 
 ### REST API + MCP Server untuk Hadith Kutub al-Sittah (6 Kitab Induk)
@@ -8,7 +9,7 @@
 [![Gin](https://img.shields.io/badge/Gin-Web_Framework-000000?style=flat&logo=go)](https://gin-gonic.com/)
 [![MCP](https://img.shields.io/badge/MCP-Server-supported?style=flat&logo=anthropic)](https://modelcontextprotocol.io/)
 [![License](https://img.shields.io/github/license/ydgi/hadith-api-go?style=flat&colorA=080f12&colorB=1fa669)](LICENSE)
-
+</div>
 ---
 
 REST API + MCP Server untuk data hadith dari 6 kitab induk (Kutub al-Sittah): Sahih Bukhari, Sahih Muslim, Sunan Abu Dawud, Jami At-Tirmidhi, Sunan an-Nasai, dan Sunan Ibn Majah. Menyediakan teks Arab, terjemahan Inggris, dan Indonesia.
@@ -17,7 +18,6 @@ REST API + MCP Server untuk data hadith dari 6 kitab induk (Kutub al-Sittah): Sa
 - **Ringan** — Single binary, SQLite embedded
 - **Simple** — JSON response
 - **MCP Ready** — Integrasikan langsung dengan Claude/LLM
-</div>
 ---
 
 ## Quick Start
