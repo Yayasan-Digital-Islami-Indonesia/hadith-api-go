@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ydgi/hadith-api-go/internal/models"
 	"github.com/ydgi/hadith-api-go/internal/services"
 )
 
@@ -20,10 +21,22 @@ func NewChapterHandler(hadithService *services.HadithService, chapterService *se
 	}
 }
 
+// GetChapterHadiths godoc
+// @Summary      List hadiths in a chapter
+// @Description  Returns paginated hadiths for the given chapter
+// @Tags         chapters
+// @Produce      json
+// @Param        chapter_id  path  int  true  "Chapter ID"
+// @Param        page        query int  false "Page number"   default(1)
+// @Param        limit       query int  false "Items per page (max 100)" default(20)
+// @Success      200 {object} models.HadithListResponse
+// @Failure      400 {object} models.ErrorResponse
+// @Failure      500 {object} models.ErrorResponse
+// @Router       /books/{id}/chapters/{chapter_id} [get]
 func (h *ChapterHandler) GetChapterHadiths(c *gin.Context) {
 	chapterID, err := strconv.ParseUint(c.Param("chapter_id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid chapter id"})
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid chapter id"})
 		return
 	}
 
@@ -44,16 +57,16 @@ func (h *ChapterHandler) GetChapterHadiths(c *gin.Context) {
 
 	hadiths, total, err := h.hadithService.GetHadithsByChapter(uint(chapterID), page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": hadiths,
-		"pagination": gin.H{
-			"page":  page,
-			"limit": pageSize,
-			"total": total,
+	c.JSON(http.StatusOK, models.HadithListResponse{
+		Data: hadiths,
+		Pagination: models.Pagination{
+			Page:  page,
+			Limit: pageSize,
+			Total: int(total),
 		},
 	})
 }

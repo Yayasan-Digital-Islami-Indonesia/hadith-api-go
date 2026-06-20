@@ -1,9 +1,371 @@
 basePath: /api/v1
+definitions:
+  github_com_ydgi_hadith-api-go_internal_models.Book:
+    properties:
+      id:
+        type: integer
+      name_ar:
+        type: string
+      name_en:
+        type: string
+      slug:
+        type: string
+      totals:
+        type: integer
+    type: object
+  github_com_ydgi_hadith-api-go_internal_models.BookListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.Book'
+        type: array
+    type: object
+  github_com_ydgi_hadith-api-go_internal_models.Chapter:
+    properties:
+      book_id:
+        type: integer
+      id:
+        type: integer
+      number:
+        type: integer
+      title_ar:
+        type: string
+      title_en:
+        type: string
+      title_id:
+        type: string
+    type: object
+  github_com_ydgi_hadith-api-go_internal_models.ChapterListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.Chapter'
+        type: array
+    type: object
+  github_com_ydgi_hadith-api-go_internal_models.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  github_com_ydgi_hadith-api-go_internal_models.Hadith:
+    properties:
+      book_id:
+        type: integer
+      chapter_id:
+        type: integer
+      global_id:
+        type: string
+      id:
+        type: integer
+      number:
+        type: integer
+      texts:
+        items:
+          $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.HadithText'
+        type: array
+    type: object
+  github_com_ydgi_hadith-api-go_internal_models.HadithListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.Hadith'
+        type: array
+      pagination:
+        $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.Pagination'
+    type: object
+  github_com_ydgi_hadith-api-go_internal_models.HadithText:
+    properties:
+      hadith_id:
+        type: integer
+      id:
+        type: integer
+      lang:
+        type: string
+      narration_chain:
+        type: string
+      text:
+        type: string
+    type: object
+  github_com_ydgi_hadith-api-go_internal_models.HealthResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  github_com_ydgi_hadith-api-go_internal_models.Pagination:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  github_com_ydgi_hadith-api-go_internal_models.SearchListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.SearchResult'
+        type: array
+      pagination:
+        $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.Pagination'
+    type: object
+  github_com_ydgi_hadith-api-go_internal_models.SearchResult:
+    properties:
+      hadith:
+        $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.Hadith'
+      lang:
+        type: string
+      text:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
   description: REST API for Kutub al-Sittah (6 canonical hadith books)
   title: Hadith API
   version: "1.0"
-paths: {}
+paths:
+  /books:
+    get:
+      description: Returns the 6 canonical hadith books (Kutub al-Sittah)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.BookListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+      summary: List all hadith books
+      tags:
+      - books
+  /books/{id}:
+    get:
+      description: Returns a single book by numeric ID or slug
+      parameters:
+      - description: Book ID or slug (e.g. 1 or bukhari)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.Book'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+      summary: Get a hadith book
+      tags:
+      - books
+  /books/{id}/chapters:
+    get:
+      description: Returns all chapters for the given book
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ChapterListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+      summary: List chapters of a book
+      tags:
+      - books
+  /books/{id}/chapters/{chapter_id}:
+    get:
+      description: Returns paginated hadiths for the given chapter
+      parameters:
+      - description: Chapter ID
+        in: path
+        name: chapter_id
+        required: true
+        type: integer
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page (max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.HadithListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+      summary: List hadiths in a chapter
+      tags:
+      - chapters
+  /books/{id}/hadith/{number}:
+    get:
+      description: Returns a hadith identified by its book ID and per-book hadith
+        number
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Hadith number within the book
+        in: path
+        name: number
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.Hadith'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+      summary: Get a hadith by book and number
+      tags:
+      - hadith
+  /hadith/{id}:
+    get:
+      description: Returns a single hadith with its multilingual texts
+      parameters:
+      - description: Hadith ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.Hadith'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+      summary: Get a hadith by ID
+      tags:
+      - hadith
+  /health:
+    get:
+      description: Returns service status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.HealthResponse'
+      summary: Health check
+      tags:
+      - system
+  /random:
+    get:
+      description: Returns one randomly selected hadith from the collection
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.Hadith'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+      summary: Get a random hadith
+      tags:
+      - hadith
+  /search:
+    get:
+      description: Full-text search across hadith texts (Arabic, English, Indonesian)
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page (max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.SearchListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse'
+      summary: Search hadiths
+      tags:
+      - search
 swagger: "2.0"

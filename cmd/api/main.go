@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	swaggerFiles "github.com/swaggo/files"
+	_ "github.com/ydgi/hadith-api-go/docs/swagger"
 	"github.com/ydgi/hadith-api-go/internal/config"
 	"github.com/ydgi/hadith-api-go/internal/handlers"
 	"github.com/ydgi/hadith-api-go/internal/middleware"

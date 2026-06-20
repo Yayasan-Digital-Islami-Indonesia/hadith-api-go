@@ -14,7 +14,558 @@ const docTemplate = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/books": {
+            "get": {
+                "description": "Returns the 6 canonical hadith books (Kutub al-Sittah)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "List all hadith books",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.BookListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/books/{id}": {
+            "get": {
+                "description": "Returns a single book by numeric ID or slug",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Get a hadith book",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Book ID or slug (e.g. 1 or bukhari)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.Book"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/books/{id}/chapters": {
+            "get": {
+                "description": "Returns all chapters for the given book",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "List chapters of a book",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Book ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ChapterListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/books/{id}/chapters/{chapter_id}": {
+            "get": {
+                "description": "Returns paginated hadiths for the given chapter",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapters"
+                ],
+                "summary": "List hadiths in a chapter",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Chapter ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Items per page (max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.HadithListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/books/{id}/hadith/{number}": {
+            "get": {
+                "description": "Returns a hadith identified by its book ID and per-book hadith number",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "hadith"
+                ],
+                "summary": "Get a hadith by book and number",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Book ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Hadith number within the book",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.Hadith"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/hadith/{id}": {
+            "get": {
+                "description": "Returns a single hadith with its multilingual texts",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "hadith"
+                ],
+                "summary": "Get a hadith by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Hadith ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.Hadith"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Returns service status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.HealthResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/random": {
+            "get": {
+                "description": "Returns one randomly selected hadith from the collection",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "hadith"
+                ],
+                "summary": "Get a random hadith",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.Hadith"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/search": {
+            "get": {
+                "description": "Full-text search across hadith texts (Arabic, English, Indonesian)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "Search hadiths",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Items per page (max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.SearchListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_ydgi_hadith-api-go_internal_models.Book": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name_ar": {
+                    "type": "string"
+                },
+                "name_en": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "totals": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_ydgi_hadith-api-go_internal_models.BookListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.Book"
+                    }
+                }
+            }
+        },
+        "github_com_ydgi_hadith-api-go_internal_models.Chapter": {
+            "type": "object",
+            "properties": {
+                "book_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "number": {
+                    "type": "integer"
+                },
+                "title_ar": {
+                    "type": "string"
+                },
+                "title_en": {
+                    "type": "string"
+                },
+                "title_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_ydgi_hadith-api-go_internal_models.ChapterListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.Chapter"
+                    }
+                }
+            }
+        },
+        "github_com_ydgi_hadith-api-go_internal_models.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_ydgi_hadith-api-go_internal_models.Hadith": {
+            "type": "object",
+            "properties": {
+                "book_id": {
+                    "type": "integer"
+                },
+                "chapter_id": {
+                    "type": "integer"
+                },
+                "global_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "number": {
+                    "type": "integer"
+                },
+                "texts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.HadithText"
+                    }
+                }
+            }
+        },
+        "github_com_ydgi_hadith-api-go_internal_models.HadithListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.Hadith"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.Pagination"
+                }
+            }
+        },
+        "github_com_ydgi_hadith-api-go_internal_models.HadithText": {
+            "type": "object",
+            "properties": {
+                "hadith_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lang": {
+                    "type": "string"
+                },
+                "narration_chain": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_ydgi_hadith-api-go_internal_models.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_ydgi_hadith-api-go_internal_models.Pagination": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_ydgi_hadith-api-go_internal_models.SearchListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.SearchResult"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.Pagination"
+                }
+            }
+        },
+        "github_com_ydgi_hadith-api-go_internal_models.SearchResult": {
+            "type": "object",
+            "properties": {
+                "hadith": {
+                    "$ref": "#/definitions/github_com_ydgi_hadith-api-go_internal_models.Hadith"
+                },
+                "lang": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        }
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
