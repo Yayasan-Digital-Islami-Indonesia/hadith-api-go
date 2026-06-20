@@ -1,3 +1,4 @@
+<div align="center">
 # Hadith API Go
 
 ### REST API + MCP Server untuk Hadith Kutub al-Sittah (6 Kitab Induk)
@@ -16,7 +17,7 @@ REST API + MCP Server untuk data hadith dari 6 kitab induk (Kutub al-Sittah): Sa
 - **Ringan** — Single binary, SQLite embedded
 - **Simple** — JSON response
 - **MCP Ready** — Integrasikan langsung dengan Claude/LLM
-
+</div>
 ---
 
 ## Quick Start
