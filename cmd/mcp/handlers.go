@@ -9,24 +9,66 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
+// handlerArgs provides typed access to MCP tool arguments.
+type handlerArgs map[string]interface{}
+
+func getArgs(request mcp.CallToolRequest) (handlerArgs, *mcp.CallToolResult) {
+	args, ok := request.Params.Arguments.(map[string]interface{})
+	if !ok {
+		return nil, mcp.NewToolResultError("invalid arguments")
+	}
+	return handlerArgs(args), nil
+}
+
+func (a handlerArgs) getString(key string) (string, *mcp.CallToolResult) {
+	v, ok := a[key].(string)
+	if !ok {
+		return "", mcp.NewToolResultError(fmt.Sprintf("%s must be a string", key))
+	}
+	return v, nil
+}
+
+func (a handlerArgs) getFloat(key string) (float64, *mcp.CallToolResult) {
+	v, ok := a[key].(float64)
+	if !ok {
+		return 0, mcp.NewToolResultError(fmt.Sprintf("%s must be a number", key))
+	}
+	return v, nil
+}
+
+func (a handlerArgs) getOptionalFloat(key string, defaultVal float64) float64 {
+	v, ok := a[key].(float64)
+	if !ok || v <= 0 {
+		return defaultVal
+	}
+	return v
+}
+
+func marshalResult(v interface{}) (*mcp.CallToolResult, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal: %v", err)), nil
+	}
+	return mcp.NewToolResultText(string(data)), nil
+}
+
 func handleGetBooks(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	books, err := bookService.GetAllBooks()
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get books: %v", err)), nil
 	}
-
-	data, err := json.Marshal(books)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal books: %v", err)), nil
-	}
-
-	return mcp.NewToolResultText(string(data)), nil
+	return marshalResult(books)
 }
 
 func handleGetBook(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	identifier, ok := request.Params.Arguments["identifier"].(string)
-	if !ok {
-		return mcp.NewToolResultError("identifier must be a string"), nil
+	args, errResult := getArgs(request)
+	if errResult != nil {
+		return errResult, nil
+	}
+
+	identifier, errResult := args.getString("identifier")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	book, err := bookService.GetBookOrBySlug(identifier)
@@ -37,18 +79,18 @@ func handleGetBook(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallT
 		return mcp.NewToolResultError("Book not found"), nil
 	}
 
-	data, err := json.Marshal(book)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal book: %v", err)), nil
-	}
-
-	return mcp.NewToolResultText(string(data)), nil
+	return marshalResult(book)
 }
 
 func handleGetChapters(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	bookIDStr, ok := request.Params.Arguments["book_id"].(string)
-	if !ok {
-		return mcp.NewToolResultError("book_id must be a string"), nil
+	args, errResult := getArgs(request)
+	if errResult != nil {
+		return errResult, nil
+	}
+
+	bookIDStr, errResult := args.getString("book_id")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	bookID, err := strconv.ParseUint(bookIDStr, 10, 32)
@@ -61,28 +103,24 @@ func handleGetChapters(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get chapters: %v", err)), nil
 	}
 
-	data, err := json.Marshal(chapters)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal chapters: %v", err)), nil
-	}
-
-	return mcp.NewToolResultText(string(data)), nil
+	return marshalResult(chapters)
 }
 
 func handleGetChapterHadiths(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	chapterID, ok := request.Params.Arguments["chapter_id"].(float64)
-	if !ok {
-		return mcp.NewToolResultError("chapter_id must be a number"), nil
+	args, errResult := getArgs(request)
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	page := 1
-	if p, ok := request.Params.Arguments["page"].(float64); ok && p > 0 {
-		page = int(p)
+	chapterID, errResult := args.getFloat("chapter_id")
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	limit := 20
-	if l, ok := request.Params.Arguments["limit"].(float64); ok && l > 0 && l <= 100 {
-		limit = int(l)
+	page := int(args.getOptionalFloat("page", 1))
+	limit := int(args.getOptionalFloat("limit", 20))
+	if limit > 100 {
+		limit = 100
 	}
 
 	hadiths, total, err := hadithService.GetHadithsByChapter(uint(chapterID), page, limit)
@@ -90,27 +128,25 @@ func handleGetChapterHadiths(ctx context.Context, request mcp.CallToolRequest) (
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get hadiths: %v", err)), nil
 	}
 
-	result := map[string]interface{}{
+	return marshalResult(map[string]interface{}{
 		"data": hadiths,
 		"pagination": map[string]interface{}{
 			"page":  page,
 			"limit": limit,
 			"total": total,
 		},
-	}
-
-	data, err := json.Marshal(result)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal result: %v", err)), nil
-	}
-
-	return mcp.NewToolResultText(string(data)), nil
+	})
 }
 
 func handleGetHadith(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	id, ok := request.Params.Arguments["id"].(float64)
-	if !ok {
-		return mcp.NewToolResultError("id must be a number"), nil
+	args, errResult := getArgs(request)
+	if errResult != nil {
+		return errResult, nil
+	}
+
+	id, errResult := args.getFloat("id")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	hadith, err := hadithService.GetHadith(uint(id))
@@ -121,23 +157,23 @@ func handleGetHadith(ctx context.Context, request mcp.CallToolRequest) (*mcp.Cal
 		return mcp.NewToolResultError("Hadith not found"), nil
 	}
 
-	data, err := json.Marshal(hadith)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal hadith: %v", err)), nil
-	}
-
-	return mcp.NewToolResultText(string(data)), nil
+	return marshalResult(hadith)
 }
 
 func handleGetHadithByNumber(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	bookID, ok := request.Params.Arguments["book_id"].(float64)
-	if !ok {
-		return mcp.NewToolResultError("book_id must be a number"), nil
+	args, errResult := getArgs(request)
+	if errResult != nil {
+		return errResult, nil
 	}
 
-	number, ok := request.Params.Arguments["number"].(float64)
-	if !ok {
-		return mcp.NewToolResultError("number must be a number"), nil
+	bookID, errResult := args.getFloat("book_id")
+	if errResult != nil {
+		return errResult, nil
+	}
+
+	number, errResult := args.getFloat("number")
+	if errResult != nil {
+		return errResult, nil
 	}
 
 	hadith, err := hadithService.GetHadithByBookAndNumber(uint(bookID), int(number))
@@ -148,28 +184,24 @@ func handleGetHadithByNumber(ctx context.Context, request mcp.CallToolRequest) (
 		return mcp.NewToolResultError("Hadith not found"), nil
 	}
 
-	data, err := json.Marshal(hadith)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal hadith: %v", err)), nil
-	}
-
-	return mcp.NewToolResultText(string(data)), nil
+	return marshalResult(hadith)
 }
 
 func handleSearch(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	query, ok := request.Params.Arguments["query"].(string)
-	if !ok || query == "" {
+	args, errResult := getArgs(request)
+	if errResult != nil {
+		return errResult, nil
+	}
+
+	query, errResult := args.getString("query")
+	if errResult != nil || query == "" {
 		return mcp.NewToolResultError("query must be a non-empty string"), nil
 	}
 
-	page := 1
-	if p, ok := request.Params.Arguments["page"].(float64); ok && p > 0 {
-		page = int(p)
-	}
-
-	limit := 20
-	if l, ok := request.Params.Arguments["limit"].(float64); ok && l > 0 && l <= 100 {
-		limit = int(l)
+	page := int(args.getOptionalFloat("page", 1))
+	limit := int(args.getOptionalFloat("limit", 20))
+	if limit > 100 {
+		limit = 100
 	}
 
 	results, total, err := searchService.Search(query, page, limit)
@@ -177,21 +209,14 @@ func handleSearch(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallTo
 		return mcp.NewToolResultError(fmt.Sprintf("Search failed: %v", err)), nil
 	}
 
-	result := map[string]interface{}{
+	return marshalResult(map[string]interface{}{
 		"data": results,
 		"pagination": map[string]interface{}{
 			"page":  page,
 			"limit": limit,
 			"total": total,
 		},
-	}
-
-	data, err := json.Marshal(result)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal result: %v", err)), nil
-	}
-
-	return mcp.NewToolResultText(string(data)), nil
+	})
 }
 
 func handleGetRandomHadith(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -199,11 +224,5 @@ func handleGetRandomHadith(ctx context.Context, request mcp.CallToolRequest) (*m
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get random hadith: %v", err)), nil
 	}
-
-	data, err := json.Marshal(hadith)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal hadith: %v", err)), nil
-	}
-
-	return mcp.NewToolResultText(string(data)), nil
+	return marshalResult(hadith)
 }

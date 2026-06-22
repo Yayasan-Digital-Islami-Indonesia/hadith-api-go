@@ -1,11 +1,8 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"strconv"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
