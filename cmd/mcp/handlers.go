@@ -36,6 +36,9 @@ func (a handlerArgs) getFloat(key string) (float64, *mcp.CallToolResult) {
 	return v, nil
 }
 
+// getOptionalFloat returns the value for key if it is a positive float64,
+// otherwise returns defaultVal. A value <= 0 is treated as missing to match
+// the old inline validation behaviour (page > 0, limit > 0).
 func (a handlerArgs) getOptionalFloat(key string, defaultVal float64) float64 {
 	v, ok := a[key].(float64)
 	if !ok || v <= 0 {
@@ -44,12 +47,13 @@ func (a handlerArgs) getOptionalFloat(key string, defaultVal float64) float64 {
 	return v
 }
 
-func marshalResult(v interface{}) (*mcp.CallToolResult, error) {
+// marshalResult JSON-marshals v and wraps it as an MCP text result.
+func marshalResult(v interface{}) *mcp.CallToolResult {
 	data, err := json.Marshal(v)
 	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal: %v", err)), nil
+		return mcp.NewToolResultError(fmt.Sprintf("Failed to marshal: %v", err))
 	}
-	return mcp.NewToolResultText(string(data)), nil
+	return mcp.NewToolResultText(string(data))
 }
 
 func handleGetBooks(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -57,7 +61,7 @@ func handleGetBooks(ctx context.Context, request mcp.CallToolRequest) (*mcp.Call
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get books: %v", err)), nil
 	}
-	return marshalResult(books)
+	return marshalResult(books), nil
 }
 
 func handleGetBook(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -79,7 +83,7 @@ func handleGetBook(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallT
 		return mcp.NewToolResultError("Book not found"), nil
 	}
 
-	return marshalResult(book)
+	return marshalResult(book), nil
 }
 
 func handleGetChapters(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -103,7 +107,7 @@ func handleGetChapters(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get chapters: %v", err)), nil
 	}
 
-	return marshalResult(chapters)
+	return marshalResult(chapters), nil
 }
 
 func handleGetChapterHadiths(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -135,7 +139,7 @@ func handleGetChapterHadiths(ctx context.Context, request mcp.CallToolRequest) (
 			"limit": limit,
 			"total": total,
 		},
-	})
+	}), nil
 }
 
 func handleGetHadith(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -157,7 +161,7 @@ func handleGetHadith(ctx context.Context, request mcp.CallToolRequest) (*mcp.Cal
 		return mcp.NewToolResultError("Hadith not found"), nil
 	}
 
-	return marshalResult(hadith)
+	return marshalResult(hadith), nil
 }
 
 func handleGetHadithByNumber(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -184,7 +188,7 @@ func handleGetHadithByNumber(ctx context.Context, request mcp.CallToolRequest) (
 		return mcp.NewToolResultError("Hadith not found"), nil
 	}
 
-	return marshalResult(hadith)
+	return marshalResult(hadith), nil
 }
 
 func handleSearch(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -216,7 +220,7 @@ func handleSearch(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallTo
 			"limit": limit,
 			"total": total,
 		},
-	})
+	}), nil
 }
 
 func handleGetRandomHadith(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -224,5 +228,5 @@ func handleGetRandomHadith(ctx context.Context, request mcp.CallToolRequest) (*m
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get random hadith: %v", err)), nil
 	}
-	return marshalResult(hadith)
+	return marshalResult(hadith), nil
 }
